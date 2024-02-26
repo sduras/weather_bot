@@ -167,7 +167,7 @@ async def weather_reports():
 
     today_report = f"Сьогодні в м. Дніпро {today_weather_description}. Tемпература від {today_temp_min_rounded} до {today_temp_max_rounded}°C, відчувається як {today_apparent_temp_rounded}°C. Вітер {today_wind_speed_description}, {today_wind_description}, до {today_wind_speed} м/c. Кількість опадів: {today_precipitation} мм. ({today_precipitation_description}). Тривалість дня {today_daylight_rounded} год., {moon_phase}."
     
-    tomorrow_report = f"Завтра буде {tomorrow_weather_description}  {tomorrow_precipitation_description}. Tемпература від {tomorrow_temp_min_rounded} до {tomorrow_temp_max_rounded}°C. Вітер {tomorrow_wind_speed_description}, {tomorrow_wind_description}, до {tomorrow_wind_speed} м/c. Tривалість світлового дня на {abs(daylight_difference):.0f} хв. {direction}, ніж сьогодні."
+    tomorrow_report = f"Завтра буде {tomorrow_weather_description}, {tomorrow_precipitation_description}. Tемпература від {tomorrow_temp_min_rounded} до {tomorrow_temp_max_rounded}°C. Вітер {tomorrow_wind_speed_description}, {tomorrow_wind_description}, до {tomorrow_wind_speed} м/c. Tривалість світлового дня на {abs(daylight_difference):.0f} хв. {direction}, ніж сьогодні."
     # print(today_report, tomorrow_report)
     return today_report, tomorrow_report
 
