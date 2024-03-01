@@ -69,6 +69,10 @@ async def weather_reports():
     time_str = time_str.strip('{}')
     locale.setlocale(locale.LC_TIME, 'uk_UA.UTF-8')
     date_obj = dt.datetime.strptime(date_str, '%Y-%m-%d')
+    time_obj = dt.datetime.strptime(time_str, '%H:%M') + dt.timedelta(hours=1)
+    datetime_obj = dt.datetime.combine(date_obj.date(), time_obj.time())
+    formatted_time = datetime_obj.strftime('%H:%M')
+    # date_obj = dt.datetime.strptime(date_str, '%Y-%m-%d')
     formatted_date = date_obj.strftime('%A').lstrip('0')
     current_time = time_str
     current_date = formatted_date
@@ -208,7 +212,7 @@ async def weather_reports():
     today_precipitation_description = next((description for speed_range, description in precipitation_mapping.items() if speed_range[0] <= today_precipitation < speed_range[1]), "Unknown")  
     tomorrow_precipitation_description = next((description for speed_range, description in precipitation_mapping.items() if speed_range[0] <= tomorrow_precipitation < speed_range[1]), "Unknown")
 
-    today_report = f"Зараз <b>{current_date}, {current_time}</b>. Температура {current_temperature}°C, відчувається як {current_apparent_temperature}°C. Атмосферний тиск {current_pressure}. Протягом дня {today_precipitation_description}. Вітер {current_wind_description}, {current_wind_speed_description}, {current_weather_description}. Тривалість світлового дня {today_daylight_rounded} год., {moon_phase}."
+    today_report = f"Зараз <b>{current_date}, {formatted_time}</b>. Температура {current_temperature}°C, відчувається як {current_apparent_temperature}°C. Атмосферний тиск {current_pressure}. Протягом дня {today_precipitation_description}. Вітер {current_wind_description}, {current_wind_speed_description}, {current_weather_description}. Тривалість світлового дня {today_daylight_rounded} год., {moon_phase}."
 
     tomorrow_report = f"<b>Завтра</b> {tomorrow_weather_description}, {tomorrow_precipitation_description}. Tемпература від {tomorrow_temp_min_rounded} до {tomorrow_temp_max_rounded}°C. Вітер {tomorrow_wind_speed_description}, {tomorrow_wind_description}. Tривалість світлового дня на {abs(daylight_difference):.0f} хв. {direction}, ніж сьогодні."
 
