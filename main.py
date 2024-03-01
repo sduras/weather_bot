@@ -12,7 +12,7 @@ def lviv_weather_report(message):
     today_report, tomorrow_report = get_weather_data_sync()
     a = f'{today_report}'
     b = f'{tomorrow_report}'
-    bot.reply_to(message, "Hi " + message.from_user.first_name + "!")
+    bot.reply_to(message, "Привіт, 👤" + message.from_user.first_name + "!"\n + "Ви наш улюблений клієнт. Тому надійний прогноз погоди лише для Вас.")
     bot.reply_to(message, f'{a}')
     bot.reply_to(message, f'{b}')
 

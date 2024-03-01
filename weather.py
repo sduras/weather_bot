@@ -208,9 +208,9 @@ async def weather_reports():
     today_precipitation_description = next((description for speed_range, description in precipitation_mapping.items() if speed_range[0] <= today_precipitation < speed_range[1]), "Unknown")  
     tomorrow_precipitation_description = next((description for speed_range, description in precipitation_mapping.items() if speed_range[0] <= tomorrow_precipitation < speed_range[1]), "Unknown")
 
-    today_report = f"Зараз {current_date}, {current_time}. {current_weather_description}. Вітер {current_wind_description}, {current_wind_speed_description}. Температура {current_temperature}°C, відчувається як {current_apparent_temperature}°C. Атмосферний тиск {current_pressure}. Протягом дня {today_precipitation_description}. Тривалість світлового дня {today_daylight_rounded} год., {moon_phase}.\n"
+    today_report = f"Зараз <b>{current_date}, {current_time}</b>. {current_weather_description}. Вітер {current_wind_description}, {current_wind_speed_description}. Температура {current_temperature}°C, відчувається як {current_apparent_temperature}°C. Атмосферний тиск {current_pressure}. Протягом дня {today_precipitation_description}. Тривалість світлового дня {today_daylight_rounded} год., {moon_phase}.\n"
 
-    tomorrow_report = f"Завтра {tomorrow_weather_description}, {tomorrow_precipitation_description}. Tемпература від {tomorrow_temp_min_rounded} до {tomorrow_temp_max_rounded}°C. Вітер {tomorrow_wind_speed_description}, {tomorrow_wind_description}. Tривалість світлового дня на {abs(daylight_difference):.0f} хв. {direction}, ніж сьогодні.\n"
+    tomorrow_report = f"<b>Завтра</b> {tomorrow_weather_description}, {tomorrow_precipitation_description}. Tемпература від {tomorrow_temp_min_rounded} до {tomorrow_temp_max_rounded}°C. Вітер {tomorrow_wind_speed_description}, {tomorrow_wind_description}. Tривалість світлового дня на {abs(daylight_difference):.0f} хв. {direction}, ніж сьогодні.\n"
 
     print(today_report, tomorrow_report)
     return today_report, tomorrow_report
