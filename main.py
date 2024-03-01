@@ -17,5 +17,3 @@ def lviv_weather_report(message):
     bot.reply_to(message, f'{b}')
 
 # bot.infinity_polling()
-
-
