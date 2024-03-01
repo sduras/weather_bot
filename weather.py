@@ -1,20 +1,25 @@
 import asyncio
 import aiohttp
+import datetime as dt
 from datetime import datetime, timedelta, timezone
 import math
 import traceback
+import locale
 
 async def fetch_weather_data():
     async with aiohttp.ClientSession() as session:
         params = {
             "latitude": 48.5,
             "longitude": 34.9,
+            "current": ["temperature_2m", "relative_humidity_2m", "apparent_temperature", "is_day", "precipitation", "rain", "showers", "snowfall", "weather_code", "cloud_cover", "pressure_msl", "surface_pressure", "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m"],
             "daily": ["weather_code", "temperature_2m_max", "temperature_2m_min", "apparent_temperature_max", "apparent_temperature_min", "sunrise", "sunset", "daylight_duration", "sunshine_duration", "uv_index_max", "uv_index_clear_sky_max", "precipitation_sum", "rain_sum", "showers_sum", "snowfall_sum", "precipitation_hours", "precipitation_probability_max", "wind_speed_10m_max", "wind_direction_10m_dominant", "shortwave_radiation_sum"],
             "timezone": "Europe/Berlin",
             "past_days": 1,
             "forecast_days": 3
         }
         async with session.get("https://api.open-meteo.com/v1/dwd-icon", params=params) as weather_data_raw:
+            weather = await weather_data_raw.json()
+            # print(weather)
             return await weather_data_raw.json()
 
 async def interpolate_wind_description(wind_value, wind_mapping):
@@ -50,26 +55,36 @@ async def moon():
 
     return phase
 
+async def hPa_to_mmHg(pressure_hPa):
+    conversion_factor = 0.7500616827
+    pressure_mmHg = round(pressure_hPa * conversion_factor, 2)
+    return pressure_mmHg
+
 async def weather_reports():
-    daily_data = await fetch_weather_data()
-    today = datetime.today()
-    tomorrow = today + timedelta(days=1)
-    # yesterday = today - timedelta(days=1)
-    seconds_per_hour = 3600
-    seconds_per_minute = 60
-    # yesterday_data = daily_data["daily"]['time'].index(yesterday.strftime("%Y-%m-%d"))
-    today_data = daily_data["daily"]['time'].index(today.strftime("%Y-%m-%d"))
-    tomorrow_data = daily_data["daily"]['time'].index(tomorrow.strftime("%Y-%m-%d"))
-    today_sunshine = daily_data["daily"]["sunshine_duration"][today_data] / seconds_per_hour
-    tomorrow_sunshine = daily_data["daily"]["sunshine_duration"][tomorrow_data] / seconds_per_hour
-    today_daylight = daily_data["daily"]["daylight_duration"][today_data] / seconds_per_hour
-    today_daylight_rounded = int(today_daylight)
-    tomorrow_daylight = daily_data["daily"]["daylight_duration"][tomorrow_data] / seconds_per_hour
-    tomorrow_daylight_rounded = int(tomorrow_daylight)
-    daylight_difference = ((tomorrow_daylight * seconds_per_hour) - (today_daylight * seconds_per_hour)) // seconds_per_minute
-    direction = "більше" if daylight_difference > 0 else "менше"
-    today_code = daily_data["daily"]["weather_code"][today_data]
-    tomorrow_code =  daily_data["daily"]["weather_code"][tomorrow_data]
+    current_data = await fetch_weather_data()
+    current_weather = current_data['current']
+    datetime_str = current_weather['time']
+    date_str, time_str = datetime_str.split('T')
+    date_str = date_str.strip('{}')
+    time_str = time_str.strip('{}')
+    locale.setlocale(locale.LC_TIME, 'uk_UA.UTF-8')
+    date_obj = dt.datetime.strptime(date_str, '%Y-%m-%d')
+    formatted_date = date_obj.strftime('%A, %d %B').lstrip('0')
+    current_time = time_str
+    current_date = formatted_date
+    current_temperature = int(current_weather['temperature_2m'])
+    current_apparent_temperature = int(current_weather['apparent_temperature'])
+    current_pressure = int(current_weather['surface_pressure'])
+    pressure_hPa = current_pressure
+    current_pressure_mmHg = await hPa_to_mmHg(pressure_hPa)
+    current_pressure = int(current_pressure_mmHg)
+    if current_pressure < 740:
+        description = "(⚠️  низький)"
+    elif current_pressure <= 770:
+        description = "(нормальний)"
+    else:
+        description = "(високий)"
+    current_pressure = f"{current_pressure} мм. {description}"
     weather_code_mapping = {
         0.0: "☀️   ясне небо",
         1.0: "☀️   в основному ясно",
@@ -100,10 +115,8 @@ async def weather_reports():
         96.0: "⛈️   гроза з градом",
         99.0: "⛈️   гроза з важким градом"
     }
-    today_weather_description = weather_code_mapping.get(today_code, "Unknown")
-    tomorrow_weather_description = weather_code_mapping.get(tomorrow_code, "Unknown")
-    today_wind = daily_data["daily"]["wind_direction_10m_dominant"][today_data]
-    tomorrow_wind = daily_data["daily"]["wind_direction_10m_dominant"][tomorrow_data] 
+    current_weather_code = int(current_weather['weather_code'])
+    current_weather_description = weather_code_mapping.get( current_weather_code, "Unknown")
     wind_mapping = {
     0.0: "північний",
     45.0: "північно-східний",
@@ -115,9 +128,6 @@ async def weather_reports():
     315.0: "північно-західний",
     360.0: "північний"
     }
-    today_wind_description = await interpolate_wind_description(today_wind, wind_mapping)
-    tomorrow_wind_description = await interpolate_wind_description(tomorrow_wind, wind_mapping)
-
     wind_speed_mapping = {
     (0.0, 0.3 * 3.6): "🦋 штиль",
     (0.4 * 3.6, 1.5 * 3.6): "тихий",
@@ -134,6 +144,38 @@ async def weather_reports():
     (32.7 * 3.6, float('inf')): "🙀 ураган",
     }
 
+    current_wind_speed = int(current_weather['wind_speed_10m'])
+    current_wind_speed_description = next((description for speed_range, description in wind_speed_mapping.items() if speed_range[0] <= current_wind_speed < speed_range[1]), "Unknown")  
+    current_wind_direction = int(current_weather['wind_direction_10m'])
+    current_wind_description = await interpolate_wind_description(current_wind_direction, wind_mapping)
+
+    daily_data = await fetch_weather_data()
+    today = datetime.today()
+    tomorrow = today + timedelta(days=1)
+    # yesterday = today - timedelta(days=1)
+    seconds_per_hour = 3600
+    seconds_per_minute = 60
+    # yesterday_data = daily_data["daily"]['time'].index(yesterday.strftime("%Y-%m-%d"))
+    today_data = daily_data["daily"]['time'].index(today.strftime("%Y-%m-%d"))
+    tomorrow_data = daily_data["daily"]['time'].index(tomorrow.strftime("%Y-%m-%d"))
+    today_sunshine = daily_data["daily"]["sunshine_duration"][today_data] / seconds_per_hour
+    tomorrow_sunshine = daily_data["daily"]["sunshine_duration"][tomorrow_data] / seconds_per_hour
+    today_daylight = daily_data["daily"]["daylight_duration"][today_data] / seconds_per_hour
+    today_daylight_rounded = int(today_daylight)
+    tomorrow_daylight = daily_data["daily"]["daylight_duration"][tomorrow_data] / seconds_per_hour
+    tomorrow_daylight_rounded = int(tomorrow_daylight)
+    daylight_difference = ((tomorrow_daylight * seconds_per_hour) - (today_daylight * seconds_per_hour)) // seconds_per_minute
+    direction = "більше" if daylight_difference > 0 else "менше"
+    today_code = daily_data["daily"]["weather_code"][today_data]
+    tomorrow_code =  daily_data["daily"]["weather_code"][tomorrow_data]
+    today_weather_description = weather_code_mapping.get(today_code, "Unknown")
+    tomorrow_weather_description = weather_code_mapping.get(tomorrow_code, "Unknown")
+    today_wind = daily_data["daily"]["wind_direction_10m_dominant"][today_data]
+    tomorrow_wind = daily_data["daily"]["wind_direction_10m_dominant"][tomorrow_data] 
+    today_wind_description = await interpolate_wind_description(today_wind, wind_mapping)
+    tomorrow_wind_description = await interpolate_wind_description(tomorrow_wind, wind_mapping)
+    today_wind_description = await interpolate_wind_description(today_wind, wind_mapping)
+    tomorrow_wind_description = await interpolate_wind_description(tomorrow_wind, wind_mapping)
     today_wind_speed = int(daily_data["daily"]["wind_speed_10m_max"][today_data])
     tomorrow_wind_speed = int(daily_data["daily"]["wind_speed_10m_max"][tomorrow_data])
     today_wind_speed_description = next((description for speed_range, description in wind_speed_mapping.items() if speed_range[0] <= today_wind_speed < speed_range[1]), "Unknown")  
@@ -162,13 +204,15 @@ async def weather_reports():
     (26.0, 50.0): "⛈️   злива",
     (51.0, float('inf')): "⚠️  екстремальні опади",
 }
+
     today_precipitation_description = next((description for speed_range, description in precipitation_mapping.items() if speed_range[0] <= today_precipitation < speed_range[1]), "Unknown")  
     tomorrow_precipitation_description = next((description for speed_range, description in precipitation_mapping.items() if speed_range[0] <= tomorrow_precipitation < speed_range[1]), "Unknown")
 
-    today_report = f"Сьогодні в м. Дніпро {today_weather_description}. Tемпература від {today_temp_min_rounded} до {today_temp_max_rounded}°C, відчувається як {today_apparent_temp_rounded}°C. Вітер {today_wind_speed_description}, {today_wind_description}, до {today_wind_speed} м/c. Кількість опадів: {today_precipitation} мм. ({today_precipitation_description}). Тривалість дня {today_daylight_rounded} год., {moon_phase}."
-    
-    tomorrow_report = f"Завтра буде {tomorrow_weather_description}, {tomorrow_precipitation_description}. Tемпература від {tomorrow_temp_min_rounded} до {tomorrow_temp_max_rounded}°C. Вітер {tomorrow_wind_speed_description}, {tomorrow_wind_description}, до {tomorrow_wind_speed} м/c. Tривалість світлового дня на {abs(daylight_difference):.0f} хв. {direction}, ніж сьогодні."
-    # print(today_report, tomorrow_report)
+    today_report = f"Зараз {current_date}, {current_time}. {current_weather_description}. Вітер {current_wind_description}, {current_wind_speed_description}. Температура {current_temperature}°C, відчувається як {current_apparent_temperature}°C. Атмосферний тиск {current_pressure}. Протягом дня {today_precipitation_description}. Тривалість світлового дня {today_daylight_rounded} год., {moon_phase}.\n"
+
+    tomorrow_report = f"Завтра {tomorrow_weather_description}, {tomorrow_precipitation_description}. Tемпература від {tomorrow_temp_min_rounded} до {tomorrow_temp_max_rounded}°C. Вітер {tomorrow_wind_speed_description}, {tomorrow_wind_description}. Tривалість світлового дня на {abs(daylight_difference):.0f} хв. {direction}, ніж сьогодні.\n"
+
+    print(today_report, tomorrow_report)
     return today_report, tomorrow_report
 
 
