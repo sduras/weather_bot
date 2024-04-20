@@ -2,7 +2,7 @@ There is sophisticated [Open-Meteo API Python Client](https://pypi.org/project/o
 
 I personally do not need this functionality, so I wrote a script for this task, which requires only [aiohttp](https://pypi.org/project/aiohttp/), asynchronous HTTP client/server framework for asyncio and Python. This script offers a simpler solution for those who just want clear, concise weather information delivered conveniently through Telegram messages.
 
-The program pulls weather data from the Deutscher Wetterdienst (DWD), [Deutscher Wetterdienst (DWD)](https://www.dwd.de), the trusted German weather service. This data is then formatted into easy-to-understand messages delivered directly to Telegram. Program uses [Vercel serverless functions](https://vercel.com/docs/functions/runtimes/python) and [pyTelegramBotAPI](https://pypi.org/project/pyTelegramBotAPI/) for notifications. The resulting weather bot provides detailed information for today and tomorrow, including:
+The program pulls weather data from the [Deutscher Wetterdienst (DWD)](https://www.dwd.de), the trusted German weather service. This data is then formatted into easy-to-understand messages delivered directly to Telegram. Program uses [Vercel serverless functions](https://vercel.com/docs/functions/runtimes/python) and [pyTelegramBotAPI](https://pypi.org/project/pyTelegramBotAPI/) for notifications. The resulting weather bot provides detailed information for today and tomorrow, including:
 
 - 🌦️ Current weather conditions (e.g., clear, partly cloudy, rainy)
 - 🌡️ Temperature range and apparent temperature
