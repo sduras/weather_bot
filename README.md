@@ -12,4 +12,4 @@ The program pulls weather data from the Deutscher Wetterdienst (DWD), [Deutscher
 - Tomorrow's weather with a comparison to today
 - Moon phase (e.g., new moon, waxing crescent)
 
-The working prototype of my program is [here](https://t.me/slw287r_bot). Currently, it shows weather for 🇺🇦 Dnipro, but can be configured for a different location.
+The working prototype is [here](https://t.me/slw287r_bot). Currently, it shows weather for 🇺🇦 Dnipro, but can be configured for a different location.
